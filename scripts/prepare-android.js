@@ -21,6 +21,9 @@ if (!html.includes('body[data-theme="midnight"]')) { html = html.replace('*{box-
 if (!html.includes('function applyAuroraTheme')) {
   html = html.replace("render();selectType('m3u');", "const themeSelect=document.getElementById('themeSelect');function applyAuroraTheme(theme){const t=['aurora','midnight','light','emerald'].includes(theme)?theme:'aurora';document.body.dataset.theme=t;localStorage.setItem('aurora-theme',t);if(themeSelect)themeSelect.value=t;}if(themeSelect)themeSelect.onchange=()=>{applyAuroraTheme(themeSelect.value);toast('تم تغيير الواجهة')};applyAuroraTheme(localStorage.getItem('aurora-theme')||'aurora');render();selectType('m3u');");
 }
+if (!html.includes('@media (min-width: 900px)')) {
+  html = html.replace('</style>', '@media (min-width: 900px) { body { font-size: 18px; } button, select, input { min-height: 44px; } .dialog { max-width: 1100px; } } button:focus-visible, input:focus-visible, select:focus-visible, .channel:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }\\n</style>');
+}
 const playerMarker = " if(window.Hls&&Hls.isSupported()";
 const media3Hook = " if(window.AuroraNativeHttp&&window.AuroraNativeHttp.isNative()&&window.AuroraMedia3&&window.AuroraMedia3.play){window.AuroraMedia3.play({url:url,title:c.name}).catch(e=>{$('#playerStatus').textContent='تعذر فتح المشغل الأصلي: '+e.message});addRecent(c);return}\n" + playerMarker;
 if (!html.includes("window.AuroraMedia3.play({url:url,title:c.name})")) html = html.replace(playerMarker, media3Hook);
