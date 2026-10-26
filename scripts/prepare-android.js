@@ -21,6 +21,9 @@ if (!html.includes('body[data-theme="midnight"]')) { html = html.replace('*{box-
 if (!html.includes('function applyAuroraTheme')) {
   html = html.replace("render();selectType('m3u');", "const themeSelect=document.getElementById('themeSelect');function applyAuroraTheme(theme){const t=['aurora','midnight','light','emerald'].includes(theme)?theme:'aurora';document.body.dataset.theme=t;localStorage.setItem('aurora-theme',t);if(themeSelect)themeSelect.value=t;}if(themeSelect)themeSelect.onchange=()=>{applyAuroraTheme(themeSelect.value);toast('تم تغيير الواجهة')};applyAuroraTheme(localStorage.getItem('aurora-theme')||'aurora');render();selectType('m3u');");
 }
+const playerMarker = " if(window.Hls&&Hls.isSupported()";
+const media3Hook = " if(window.AuroraNativeHttp&&window.AuroraNativeHttp.isNative()&&window.AuroraMedia3&&window.AuroraMedia3.play){window.AuroraMedia3.play({url:url,title:c.name}).catch(e=>{$('#playerStatus').textContent='تعذر فتح المشغل الأصلي: '+e.message});addRecent(c);return}\\n" + playerMarker;
+if (!html.includes("window.AuroraMedia3.play({url:url,title:c.name})")) html = html.replace(playerMarker, media3Hook);
 fs.writeFileSync(htmlPath, html);
 if (!html.includes('window.AuroraMedia3.play({url:url,title:c.name})')) { console.error('Media3 playback hook was not inserted.'); process.exit(1); }\nconsole.log('Prepared selectable UI themes and native Media3 playback.'); 
 console.log('Bundled local HLS library and native Android HTTP bridge.');
