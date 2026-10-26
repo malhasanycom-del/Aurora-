@@ -22,10 +22,17 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Locate Android SDK manager
+        id: sdk
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -n "$SDKMANAGER"
+          echo "sdkmanager=$SDKMANAGER" >> "$GITHUB_OUTPUT"
       - name: Accept Android SDK licenses
-        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+        run: yes | "${{ steps.sdk.outputs.sdkmanager }}" --licenses || true
       - name: Install Android SDK packages
-        run: "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
+        run: "${{ steps.sdk.outputs.sdkmanager }}" "platforms;android-36" "build-tools;36.0.0"
       - name: Install dependencies
         run: npm install
       - name: Validate source
