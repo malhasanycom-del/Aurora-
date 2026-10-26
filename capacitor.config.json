@@ -1,0 +1,11 @@
+{
+  "appId": "tv.aurora.player",
+  "appName": "Aurora IPTV",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
