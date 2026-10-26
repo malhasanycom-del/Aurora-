@@ -6,14 +6,17 @@ const xmlDir = path.join(root, 'android', 'app', 'src', 'main', 'res', 'xml');
 if (!fs.existsSync(manifest)) { console.error('AndroidManifest.xml not found.'); process.exit(1); }
 fs.mkdirSync(xmlDir, { recursive: true });
 const config = path.join(xmlDir, 'network_security_config.xml');
-fs.writeFileSync(config, \`<?xml version="1.0" encoding="utf-8"?>
-<network-security-config>
-    <base-config cleartextTrafficPermitted="false" />
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">zakm3u.com</domain>
-    </domain-config>
-</network-security-config>
-\`);
+const configText = [
+  '<?xml version="1.0" encoding="utf-8"?>',
+  '<network-security-config>',
+  '    <base-config cleartextTrafficPermitted="false" />',
+  '    <domain-config cleartextTrafficPermitted="true">',
+  '        <domain includeSubdomains="true">zakm3u.com</domain>',
+  '    </domain-config>',
+  '</network-security-config>',
+  ''
+].join('\n');
+fs.writeFileSync(config, configText);
 let xml = fs.readFileSync(manifest, 'utf8');
 if (!xml.includes('android.permission.INTERNET')) {
   xml = xml.replace(/<application\b/, '  <uses-permission android:name="android.permission.INTERNET" />\n    <application');
