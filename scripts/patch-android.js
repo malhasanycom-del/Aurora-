@@ -30,8 +30,8 @@ m = m.replace(/<application\b([^>]*)>/, (tag, attrs) => {
  return '<application' + a + '>';
 });
 if (!m.includes('Media3PlayerActivity')) m = m.replace('</application>', '    <activity android:name=".Media3PlayerActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize" android:exported="false" android:screenOrientation="landscape" />\n</application>');
-if (!m.includes('android.software.leanback')) m = m.replace('<application', '    <uses-feature android:name="android.software.leanback" android:required="false" />\\n    <application');
-if (!m.includes('android.intent.category.LEANBACK_LAUNCHER')) m = m.replace('<category android:name="android.intent.category.LAUNCHER" />', '<category android:name="android.intent.category.LAUNCHER" />\\n                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />');
+if (!m.includes('android.software.leanback')) m = m.replace('<application', '    <uses-feature android:name="android.software.leanback" android:required="false" />\n    <application');
+if (!m.includes('android.intent.category.LEANBACK_LAUNCHER')) m = m.replace('<category android:name="android.intent.category.LAUNCHER" />', '<category android:name="android.intent.category.LAUNCHER" />\n                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />');
 fs.writeFileSync(manifest, m);
 let g = fs.readFileSync(gradle, 'utf8');
 if (!g.includes('androidx.media3:media3-exoplayer:1.11.1')) g = g.replace(/dependencies\s*\{/, 'dependencies {\n    implementation "androidx.media3:media3-exoplayer:1.11.1"\n    implementation "androidx.media3:media3-exoplayer-hls:1.11.1"\n    implementation "androidx.media3:media3-ui:1.11.1"');
