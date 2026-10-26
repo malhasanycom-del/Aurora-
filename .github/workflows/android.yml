@@ -32,6 +32,8 @@ jobs:
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Install dependencies
         run: npm install
+      - name: Check JavaScript syntax
+        run: node --check scripts/prepare-android.js && node --check scripts/patch-android.js && node --check scripts/native-http-entry.js
       - name: Validate source
         run: npm run validate
       - name: Bundle HLS library
