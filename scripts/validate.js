@@ -13,7 +13,7 @@ const nativeFiles = [
 ];
 for (const file of nativeFiles) if (!fs.existsSync(path.join(root, file))) missing.push(file);
 if (!patch.includes('media3-exoplayer-hls:1.11.1')) missing.push('Media3 1.11.1 HLS dependency');
-if (!patch.includes('MainActivity') || !patch.includes('android:screenOrientation="landscape"')) missing.push('forced landscape app orientation');
+if (!patch.includes('MainActivity') || !patch.includes('android:screenOrientation="portrait"')) missing.push('forced landscape app orientation');
 if (!patch.includes('network_security_config.xml') || !patch.includes('zakm3u.com')) missing.push('scoped HTTP network policy');
 if (!prepare.includes('applyAuroraTheme') || !prepare.includes('AuroraMedia3.play')) missing.push('theme / Media3 integration');
 if (missing.length) { console.error('Validation failed:', missing.join(', ')); process.exit(1); }
