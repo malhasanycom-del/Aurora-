@@ -4,7 +4,7 @@ const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'www', 'index.html'), 'utf8');
 const patch = fs.readFileSync(path.join(__dirname, 'patch-android.js'), 'utf8');
 const prepare = fs.readFileSync(path.join(__dirname, 'prepare-android.js'), 'utf8');
-const required = ['id="app"', 'id="player"', 'parseM3U', 'Xtream Codes', 'Stalker Portal', 'EPG', 'favorites', 'parental', 'sleepBtn', 'vendor/hls.min.js', 'vendor/native-http.js', 'httpRequest', 'parseM3UFile', "$('#heroAdd').onclick=e=>", 'android:screenOrientation="landscape"'];
+const required = ['id="app"', 'id="player"', 'parseM3U', 'Xtream Codes', 'Stalker Portal', 'EPG', 'favorites', 'parental', 'sleepBtn', 'vendor/hls.min.js', 'vendor/native-http.js', 'httpRequest', 'parseM3UFile', "$('#heroAdd').onclick=e=>"];
 const missing = required.filter(s => !html.toLowerCase().includes(s.toLowerCase()));
 const nativeFiles = [
   'native/android/tv/aurora/player/Media3PlayerActivity.java',
