@@ -77,15 +77,27 @@ function idFor(url,name){let s=url+'|'+name,h=2166136261;for(let i=0;i<s.length;
 function parseM3U(text,sourceId){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/),out=[];let meta=null;for(let i=0;i<lines.length;i++){let line=lines[i].trim();if(line.startsWith('#EXTINF:')){let comma=line.indexOf(','),info=comma>=0?line.slice(comma+1).trim():'Channel';const attr=k=>{const m=line.match(new RegExp(k+'="([^"]*)"','i'));return m?m[1]:''};meta={name:info||'قناة',group:attr('group-title')||'عام',logo:attr('tvg-logo'),tvgId:attr('tvg-id'),url:'',sourceId};}else if(line&&!line.startsWith('#')&&meta){meta.url=line;meta.id=idFor(line,meta.name);out.push(meta);meta=null}}return out}
 function validateHttp(url){try{const u=new URL(url);return ['http:','https:'].includes(u.protocol)}catch{return false}}
 async function httpRequest(url,options={}){
+ if(!validateHttp(url))throw Error('الرابط غير صالح؛ يجب أن يبدأ بـ http:// أو https://');
  const native=window.AuroraNativeHttp;
- if(native&&native.isNative()){
-  const r=await native.request({url,method:options.method||'GET',headers:options.headers||{},data:options.body,responseType:'text',connectTimeout:20000,readTimeout:45000});
-  const body=typeof r.data==='string'?r.data:(r.data==null?'':JSON.stringify(r.data));
-  return {ok:r.status>=200&&r.status<300,status:r.status,text:async()=>body,json:async()=>JSON.parse(body)};
- }
- try{return await window.fetch(url,options)}catch(e){throw Error('تعذر الاتصال من المتصفح (CORS). حدّث تطبيق Aurora لتفعيل الاتصال الأصلي: '+e.message)}
+ const timeoutMs=Number(options.timeoutMs)||90000;
+ let timer;
+ try{
+  const task=(native&&native.isNative())
+   ? native.request({url,method:options.method||'GET',headers:options.headers||{},data:options.body,responseType:'text',connectTimeout:20000,readTimeout:Math.min(timeoutMs,90000)})
+   : window.fetch(url,options);
+  const r=await Promise.race([task,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('انتهت مهلة الاتصال بعد '+Math.round(timeoutMs/1000)+' ثانية. تحقق من الرابط أو الخادم ثم أعد المحاولة.')),timeoutMs)})]);
+  if(native&&native.isNative()){
+   const body=typeof r.data==='string'?r.data:(r.data==null?'':JSON.stringify(r.data));
+   return {ok:r.status>=200&&r.status<300,status:r.status,text:async()=>body,json:async()=>{try{return JSON.parse(body)}catch{throw Error('ردّ الخادم ليس JSON صالحاً')}}};
+  }
+  return r;
+ }catch(e){
+  if(String(e.message||e).includes('انتهت مهلة الاتصال'))throw e;
+  if(native&&native.isNative())throw Error('فشل الاتصال بالمصدر: '+(e.message||e));
+  throw Error('تعذر الاتصال من المتصفح (CORS). جرّب رابط HTTPS مباشر أو تأكد أن المصدر يسمح بالاتصال: '+(e.message||e));
+ }finally{if(timer)clearTimeout(timer)}
 }
-async function fetchText(url){const r=await httpRequest(url,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status+' — تعذر تحميل المصدر');return await r.text()}
+async function fetchText(url){const r=await httpRequest(url,{cache:'no-store',timeoutMs:90000});if(!r.ok)throw Error('HTTP '+r.status+' — تعذر تحميل المصدر');const text=await r.text();if(!text.trim())throw Error('المصدر أعاد ملفاً فارغاً. تحقق من الرابط وبيانات الدخول.');return text}
 async function connectSource(data){
  const source={id:idFor(Date.now().toString(),data.name),name:data.name,type:activeType,addedAt:Date.now(),...data};let channels=[];
  if(activeType==='m3u'){if(!validateHttp(data.url))throw Error('أدخل رابط M3U صحيحاً يبدأ بـ http أو https');const text=await fetchText(data.url);channels=parseM3U(text,source.id);if(!channels.length)throw Error('لم نجد قنوات في الملف. تأكد أن الرابط يعرض قائمة M3U صالحة.')}
@@ -111,7 +123,7 @@ async function connectSource(data){
  state.sources=state.sources.filter(s=>s.id!==source.id).concat(source);
  state.channels=state.channels.filter(c=>c.sourceId!==source.id).concat(channels);
  if(data.epg||data.epg2)source.epgUrl=data.epg||data.epg2;
- save();render();return channels.length;
+ save();await saveChain;render();return channels.length;
 }
 function renderStats(){$('#channelCount').textContent=state.channels.filter(c=>!state.hidden.includes(c.id)).length;$('#sourceCount').textContent=state.sources.length;$('#favoriteCount').textContent=state.favorites.length}
 function render(){
@@ -143,7 +155,7 @@ $('#sourcesBtn').onclick=openSource;$('#heroAdd').onclick=openSource;$('#addSour
 $$('.navitem').forEach(b=>b.onclick=()=>showView(b.dataset.view));
 $$('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));
 $('#sourceTypes').onclick=e=>{const b=e.target.closest('[data-type]');if(b)selectType(b.dataset.type)};
-$('#sourceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),data=Object.fromEntries(f.entries());data.name=(data.name||'').trim();const btn=$('#connectBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> جارٍ الاتصال…';$('#sourceError').textContent='';try{const n=await connectSource(data);modal('sourceModal',false);e.target.reset();selectType('m3u');showView('libraryView');toast('تمت إضافة المصدر: '+n+' قناة')}catch(err){$('#sourceError').textContent=err.message;}finally{btn.disabled=false;btn.textContent='اتصال وتحميل القنوات'}};
+$('#sourceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),data=Object.fromEntries(f.entries());data.name=(data.name||'').trim();const btn=$('#connectBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> جارٍ الاتصال…';$('#sourceError').textContent='جاري الاتصال بالمصدر. قد تستغرق القوائم الكبيرة وقتاً أطول.';try{const n=await connectSource(data);modal('sourceModal',false);e.target.reset();selectType('m3u');showView('libraryView');toast('تمت إضافة المصدر: '+n+' قناة')}catch(err){$('#sourceError').textContent=err.message||'فشل تحميل القائمة. تحقق من الرابط ثم أعد المحاولة.';}finally{btn.disabled=false;btn.textContent='اتصال وتحميل القنوات'}};
 $('#filters').onclick=e=>{const b=e.target.closest('[data-category]');if(b){activeFilter=b.dataset.category;render()}};
 $('#search').oninput=e=>{searchTerm=e.target.value;render()};
 $('#sortBtn').onclick=()=>{sortAZ=!sortAZ;toast(sortAZ?'ترتيب أبجدي':'الترتيب الافتراضي');render()};
