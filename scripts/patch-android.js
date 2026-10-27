@@ -15,10 +15,7 @@ fs.copyFileSync(path.join(root, 'native/android/tv/aurora/player/AuroraMedia3Plu
 fs.writeFileSync(path.join(xmlDir, 'network_security_config.xml'), [
   '<?xml version="1.0" encoding="utf-8"?>',
   '<network-security-config>',
-  '  <base-config cleartextTrafficPermitted="false" />',
-  '  <domain-config cleartextTrafficPermitted="true">',
-  '    <domain includeSubdomains="true">zakm3u.com</domain>',
-  '  </domain-config>',
+  '  <base-config cleartextTrafficPermitted="true" />',
   '</network-security-config>'
 ].join('\n'));
 let m = fs.readFileSync(manifest, 'utf8');
