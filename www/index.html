@@ -9,7 +9,7 @@
 @media(max-width:900px){.channels{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{grid-template-columns:1fr .6fr;padding:22px}.hero-art{height:120px}.orb{width:112px;height:112px}.orb:before{width:91px;height:91px}.orb span{font-size:36px}}
 @media(max-width:620px){.shell{padding:14px 13px 94px}.top{margin-bottom:15px}.brand h1{font-size:20px}.brand small{font-size:10px}.logo{width:42px;height:42px}.top-actions .softbtn{display:none}.hero{display:block;min-height:0;padding:22px 20px}.hero-art{display:none}.hero h2{font-size:29px}.hero p{font-size:13px}.stats{gap:8px;margin:12px 0 23px}.stat{padding:12px}.stat strong{font-size:20px}.stat span{font-size:10px}.channels{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.channel{padding:11px;min-height:116px}.ch-logo{width:39px;height:39px}.section-head{margin-top:20px}.formgrid{grid-template-columns:1fr}.bottomnav{gap:4px}.navitem{min-width:49px;padding:4px 5px}}
 @media(min-width:1000px){.shell{padding-top:26px}.channels{grid-template-columns:repeat(5,minmax(0,1fr))}}
-</style>
+ .source-picker{display:flex;align-items:center;gap:10px;margin:2px 0 12px;flex-wrap:wrap}.source-picker label{color:var(--muted);font-size:13px}.source-picker .field{max-width:360px;flex:1;min-width:160px}.media-tabs .chip{font-weight:700;padding:10px 16px}\n</style>
 </head>
 <body>
 <div id="app" class="shell">
@@ -28,6 +28,8 @@
 </div>
 <section id="libraryView">
  <div class="section-head"><div><h3 id="viewTitle">قنواتك</h3><p id="viewSubtitle">أضف قائمة لبدء المشاهدة</p></div><button class="softbtn" id="refreshBtn">↻ تحديث</button></div>
+ <div class="filters media-tabs" id="mediaTabs"><button class="chip active" data-media="live">📺 القنوات</button><button class="chip" data-media="movie">🎬 الأفلام</button><button class="chip" data-media="series">📚 المسلسلات</button></div>
+ <div class="source-picker"><label for="activeSource">قائمة التشغيل</label><select id="activeSource" class="field"><option value="all">كل قوائم التشغيل</option></select><button class="softbtn" id="manageSourcesBtn">إدارة القوائم</button></div>
  <div class="filters" id="filters"><button class="chip active" data-category="all">الكل</button><button class="chip" data-category="favorites">★ المفضلة</button><button class="chip" data-category="recent">شاهدتها مؤخراً</button></div>
  <div class="toolbar"><input id="search" class="search" placeholder="ابحث عن قناة أو مجموعة…" aria-label="بحث"><button class="iconbtn" id="sortBtn" title="ترتيب">⇅</button></div>
  <div id="channels" class="channels"><div class="empty"><b>مرحباً بك في آل راشد TV</b>أضف رابط M3U أو بيانات Xtream Codes لعرض قنواتك هنا.</div></div>
@@ -61,7 +63,7 @@
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 const KEY='aurora.player.v1', DB_NAME='aurora-player-storage', DB_VERSION=1, DB_STORE='app';
 const EMPTY_STATE={sources:[],channels:[],favorites:[],hidden:[],recent:[],parental:false,pin:'1234',epg:[]};
-let state=loadState(), activeType='m3u', activeFilter='all', searchTerm='', sortAZ=false, currentChannel=null, hls=null, sleepTimer=null, epgPrograms=[], pendingAction=null, db=null, storageReady=false, saveChain=Promise.resolve(), displayLimit=250;
+let state=loadState(), activeType='m3u', activeFilter='all', activeMediaType='live', activeSourceId='all', searchTerm='', sortAZ=false, currentChannel=null, hls=null, sleepTimer=null, epgPrograms=[], pendingAction=null, db=null, storageReady=false, saveChain=Promise.resolve(), displayLimit=250;
 function loadState(){try{return Object.assign({},EMPTY_STATE,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch{return {...EMPTY_STATE}}}
 function openStorage(){return new Promise((resolve,reject)=>{if(!window.indexedDB){reject(Error('هذا الجهاز لا يدعم التخزين المحلي الآمن'));return}const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(DB_STORE))req.result.createObjectStore(DB_STORE)};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error('تعذر فتح التخزين المحلي'))})}
 function dbGet(){return new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,'readonly'),req=tx.objectStore(DB_STORE).get('state');req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>reject(req.error)})}
@@ -74,7 +76,28 @@ function modal(id,show=true){$('#'+id).classList.toggle('show',show)}
 function cleanUrl(s){return (s||'').trim().replace(/\/$/,'')}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function idFor(url,name){let s=url+'|'+name,h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0).toString(36)}
-function parseM3U(text,sourceId){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/),out=[];let meta=null;for(let i=0;i<lines.length;i++){let line=lines[i].trim();if(line.startsWith('#EXTINF:')){let comma=line.indexOf(','),info=comma>=0?line.slice(comma+1).trim():'Channel';const attr=k=>{const m=line.match(new RegExp(k+'="([^"]*)"','i'));return m?m[1]:''};meta={name:info||'قناة',group:attr('group-title')||'عام',logo:attr('tvg-logo'),tvgId:attr('tvg-id'),url:'',sourceId};}else if(line&&!line.startsWith('#')&&meta){meta.url=line;meta.id=idFor(line,meta.name);out.push(meta);meta=null}}return out}
+function inferMediaType(item){
+ if(item.mediaType)return item.mediaType;
+ const text=(String(item.group||'')+' '+String(item.name||'')).toLowerCase();
+ const url=String(item.url||'').toLowerCase();
+ if(/series|episode|مسلسل|مسلسلات|دراما|season|الحلقات/.test(text))return 'series';
+ if(/movie|movies|film|vod|أفلام|فيلم|سينما/.test(text)||/\.(mp4|mkv|avi|mov|m4v)(\?|$)/.test(url))return 'movie';
+ return 'live';
+}
+function parseM3U(text,sourceId){
+ const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/),out=[];let meta=null;
+ for(let i=0;i<lines.length;i++){
+  let line=lines[i].trim();
+  if(line.startsWith('#EXTINF:')){
+   let comma=line.indexOf(','),info=comma>=0?line.slice(comma+1).trim():'Channel';
+   const attr=k=>{const m=line.match(new RegExp(k+'="([^"]*)"','i'));return m?m[1]:''};
+   meta={name:info||'قناة',group:attr('group-title')||'عام',logo:attr('tvg-logo'),tvgId:attr('tvg-id'),url:'',sourceId};
+  }else if(line&&!line.startsWith('#')&&meta){
+   meta.url=line;meta.id=idFor(sourceId+'|'+line,meta.name);meta.mediaType=inferMediaType(meta);out.push(meta);meta=null;
+  }
+ }
+ return out;
+}
 function validateHttp(url){try{const u=new URL(url);return ['http:','https:'].includes(u.protocol)}catch{return false}}
 async function httpRequest(url,options={}){
  if(!validateHttp(url))throw Error('الرابط غير صالح؛ يجب أن يبدأ بـ http:// أو https://');
@@ -109,7 +132,17 @@ async function connectSource(data){
   const streams=await httpRequest(base+'/player_api.php?'+auth+'&action=get_live_streams').then(r=>r.json());
   channels=(Array.isArray(streams)?streams:[]).map(c=>({id:String(c.stream_id),name:c.name||'قناة',group:(cats.find(x=>String(x.category_id)===String(c.category_id))||{}).category_name||'Live TV',logo:c.stream_icon||'',url:base+'/live/'+encodeURIComponent(data.username)+'/'+encodeURIComponent(data.password)+'/'+c.stream_id+'.ts',sourceId:source.id,tvgId:c.epg_channel_id||''}));
   source.xtreamCategories=Array.isArray(cats)?cats:[];
-  if(!channels.length)throw Error('تم الاتصال لكن لم يتم العثور على قنوات مباشرة.');
+  const [vodCats,vodStreams,seriesCats,seriesItems]=await Promise.all([
+   httpRequest(base+'/player_api.php?'+auth+'&action=get_vod_categories').then(r=>r.json()).catch(()=>[]),
+   httpRequest(base+'/player_api.php?'+auth+'&action=get_vod_streams').then(r=>r.json()).catch(()=>[]),
+   httpRequest(base+'/player_api.php?'+auth+'&action=get_series_categories').then(r=>r.json()).catch(()=>[]),
+   httpRequest(base+'/player_api.php?'+auth+'&action=get_series').then(r=>r.json()).catch(()=>[])
+  ]);
+  const vod=Array.isArray(vodStreams)?vodStreams:[];
+  channels.push(...vod.map(c=>({id:source.id+':movie:'+String(c.stream_id),name:c.name||'فيلم',group:(vodCats.find(x=>String(x.category_id)===String(c.category_id))||{}).category_name||'أفلام',logo:c.stream_icon||'',url:base+'/movie/'+encodeURIComponent(data.username)+'/'+encodeURIComponent(data.password)+'/'+c.stream_id+'.'+(c.container_extension||'mp4'),sourceId:source.id,mediaType:'movie',containerExtension:c.container_extension||'mp4'})));
+  const shows=Array.isArray(seriesItems)?seriesItems:[];
+  channels.push(...shows.map(c=>({id:source.id+':series:'+String(c.series_id),name:c.name||'مسلسل',group:(seriesCats.find(x=>String(x.category_id)===String(c.category_id))||{}).category_name||'مسلسلات',logo:c.cover||c.movie_image||'',url:'',sourceId:source.id,mediaType:'series',seriesId:String(c.series_id)})));
+  if(!channels.length)throw Error('تم الاتصال لكن لم يتم العثور على قنوات أو أفلام أو مسلسلات.');
  }
  if(activeType==='stalker'){
   if(!validateHttp(data.portal))throw Error('أدخل رابط بوابة صحيحاً');source.portal=cleanUrl(data.portal);source.mac=data.mac||'';
@@ -125,20 +158,30 @@ async function connectSource(data){
  if(data.epg||data.epg2)source.epgUrl=data.epg||data.epg2;
  save();await saveChain;render();return channels.length;
 }
-function renderStats(){$('#channelCount').textContent=state.channels.filter(c=>!state.hidden.includes(c.id)).length;$('#sourceCount').textContent=state.sources.length;$('#favoriteCount').textContent=state.favorites.length}
+function renderStats(){
+ $('#channelCount').textContent=state.channels.filter(c=>!state.hidden.includes(c.id)).length;
+ $('#sourceCount').textContent=state.sources.length;
+ $('#favoriteCount').textContent=state.favorites.length;
+}
+function updateSourcePicker(){
+ const select=$('#activeSource');if(!select)return;
+ const old=activeSourceId;
+ select.innerHTML='<option value="all">كل قوائم التشغيل</option>'+state.sources.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name||'قائمة')+'</option>').join('');
+ if(old!=='all'&&state.sources.some(s=>s.id===old)){select.value=old;activeSourceId=old}else{select.value='all';activeSourceId='all'}
+}
 function render(){
  renderStats();
  const wrap=$('#channels');
- let list=state.channels.filter(c=>!state.hidden.includes(c.id));
+ let list=state.channels.filter(c=>!state.hidden.includes(c.id));\n list=list.filter(c=>inferMediaType(c)===activeMediaType);\n if(activeSourceId!=='all')list=list.filter(c=>c.sourceId===activeSourceId);
  if(activeFilter==='favorites')list=list.filter(c=>state.favorites.includes(c.id));
  if(activeFilter==='recent')list=list.filter(c=>state.recent.includes(c.id)).sort((a,b)=>state.recent.indexOf(a.id)-state.recent.indexOf(b.id));
  if(activeFilter!=='recent'&&activeFilter!=='favorites'&&activeFilter!=='all')list=list.filter(c=>c.group===activeFilter);
  if(searchTerm)list=list.filter(c=>((c.name||'')+' '+(c.group||'')).toLowerCase().includes(searchTerm.toLowerCase()));
  if(sortAZ)list=list.slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ar'));
- const groups=[...new Set(state.channels.filter(c=>!state.hidden.includes(c.id)).map(c=>c.group||'عام'))];
+ const groups=[...new Set(list.map(c=>c.group||'عام'))];
  const f=$('#filters');
  f.innerHTML='<button class="chip '+(activeFilter==='all'?'active':'')+'" data-category="all">الكل</button><button class="chip '+(activeFilter==='favorites'?'active':'')+'" data-category="favorites">★ المفضلة</button><button class="chip '+(activeFilter==='recent'?'active':'')+'" data-category="recent">شاهدتها مؤخراً</button>'+groups.slice(0,15).map(g=>'<button class="chip '+(activeFilter===g?'active':'')+'" data-category="'+esc(g)+'">'+esc(g)+'</button>').join('');
- if(!list.length){wrap.innerHTML='<div class="empty"><b>'+(state.channels.length?'لا توجد نتائج':'مكتبتك جاهزة لتبدأ')+'</b>'+(state.channels.length?'جرّب تغيير البحث أو الفلتر.':'أضف رابط M3U أو بيانات Xtream Codes من زر إضافة مصدر.')+'</div>';return}
+ if(!list.length){const hasSources=state.sources.length>0;wrap.innerHTML='<div class="empty"><b>'+(!hasSources?'مكتبتك جاهزة لتبدأ':activeMediaType==='live'?'لا توجد قنوات مباشرة في هذه القائمة':activeMediaType==='movie'?'لا توجد أفلام في هذه القائمة':'لا توجد مسلسلات في هذه القائمة')+'</b>'+(!hasSources?'أضف مصدراً من زر إضافة مصدر.':activeSourceId==='all'?'اختر قائمة تشغيل أخرى أو أضف مصدراً يحتوي هذا النوع.':'جرّب قائمة أخرى أو حدّث المصدر المحدد.')+'</div>';return}
  const shown=list.slice(0,displayLimit);
  wrap.innerHTML=shown.map((c,i)=>'<div class="channel" role="button" tabindex="0" data-play="'+esc(c.id)+'" style="animation-delay:'+Math.min(i,12)*10+'ms"><div class="ch-top"><div class="ch-logo">'+(c.logo?'<img loading="lazy" src="'+esc(c.logo)+'" onerror="this.remove();this.parentElement.textContent=\''+esc((c.name||'A').slice(0,1))+'\'">':esc((c.name||'A').slice(0,1)))+'</div><button type="button" class="fav '+(state.favorites.includes(c.id)?'on':'')+'" data-fav="'+esc(c.id)+'" aria-label="مفضلة">★</button></div><strong>'+esc(c.name||'قناة')+'</strong><small><i class="live-dot"></i>'+esc(c.group||'قناة مباشرة')+'</small></div>').join('');
  if(list.length>shown.length)wrap.insertAdjacentHTML('beforeend','<div class="empty" style="padding:16px"><b>تم عرض '+shown.length+' من '+list.length+' قناة</b><button type="button" class="primary" data-load-more>عرض 250 قناة إضافية</button></div>');
@@ -146,7 +189,7 @@ function render(){
 function showView(id){try{['libraryView','sourcesView','settingsView'].forEach(v=>$('#'+v).classList.toggle('hidden',v!==id));$('.navitem').forEach(b=>b.classList.toggle('active',b.dataset.view===id));if(id==='sourcesView')renderSources();if(id==='settingsView'){$('#parentalToggle').checked=!!state.parental;$('#pinField').value=state.pin||'1234'}}catch(e){console.error('Aurora navigation error',e);toast('تعذر فتح هذه الصفحة: '+(e.message||e))}}
 function renderSources(){const wrap=$('#sourceList');if(!state.sources.length){wrap.innerHTML='<div class="empty"><b>لا توجد مصادر بعد</b>أضف قائمة M3U أو اتصال Xtream Codes أو بوابة Stalker.</div>';return}const counts=new Map();for(const ch of state.channels){counts.set(ch.sourceId,(counts.get(ch.sourceId)||0)+1)}wrap.innerHTML=state.sources.map(s=>'<div class="settings-card listrow"><div><strong>'+esc(s.name||'مصدر')+'</strong><small>'+esc(String(s.type||'m3u').toUpperCase())+' · '+(counts.get(s.id)||0)+' قناة</small></div><div><button type="button" class="softbtn" data-refresh="'+esc(s.id)+'">تحديث</button> <button type="button" class="softbtn danger" data-remove="'+esc(s.id)+'">حذف</button></div></div>').join('')}
 function addRecent(c){state.recent=[c.id,...state.recent.filter(id=>id!==c.id)].slice(0,100);save()}
-function playChannel(c){currentChannel=c;$('#playingName').textContent=c.name;$('#playingGroup').textContent=c.group||'قناة مباشرة';$('#playerStatus').textContent='';$('#favPlayerBtn').textContent=state.favorites.includes(c.id)?'★ في المفضلة':'☆ أضف للمفضلة';modal('playerModal');const video=$('#player');if(hls){hls.destroy();hls=null}video.pause();video.removeAttribute('src');video.load();let url=c.url||c.cmd||'';
+async function playChannel(c){currentChannel=c;$('#playingName').textContent=c.name;$('#playingGroup').textContent=c.group||'قناة مباشرة';$('#playerStatus').textContent='';$('#favPlayerBtn').textContent=state.favorites.includes(c.id)?'★ في المفضلة':'☆ أضف للمفضلة';modal('playerModal');const video=$('#player');if(hls){hls.destroy();hls=null}video.pause();video.removeAttribute('src');video.load();let url=c.url||c.cmd||'';\n if(c.mediaType==='series'||inferMediaType(c)==='series'){try{const src=state.sources.find(s=>s.id===c.sourceId);if(!src||src.type!=='xtream'||!c.seriesId){toast('تشغيل المسلسل يحتاج مصدراً يدعم بيانات الحلقات.');return}const q='username='+encodeURIComponent(src.username)+'&password='+encodeURIComponent(src.password)+'&action=get_series_info&series_id='+encodeURIComponent(c.seriesId);const info=await httpRequest(src.server+'/player_api.php?'+q).then(r=>r.json());const episodes=Object.values(info.episodes||{}).flat().filter(ep=>ep&&ep.id);if(!episodes.length){toast('لم يعثر الخادم على حلقات لهذا المسلسل.');return}const choices=episodes.slice(0,60).map((ep,i)=>(i+1)+'. '+(ep.title||('الحلقة '+(i+1)))).join('\\n');const pick=prompt('اختر رقم الحلقة:\\n'+choices,'1');const idx=Number(pick)-1;if(!Number.isInteger(idx)||idx<0||idx>=Math.min(episodes.length,60))return;const ep=episodes[idx];c={...c,name:c.name+' — '+(ep.title||'الحلقة '+(idx+1)),url:src.server+'/series/'+encodeURIComponent(src.username)+'/'+encodeURIComponent(src.password)+'/'+ep.id+'.'+(ep.container_extension||'mp4'),mediaType:'episode'};}catch(err){toast('تعذر تحميل حلقات المسلسل: '+err.message);return}}
  if(c.stalker&&c.cmd){url=c.cmd;if(!/^https?:/i.test(url)){const src=state.sources.find(s=>s.id===c.sourceId);if(src&&src.api){url=src.api+'?type=itv&action=create_link&cmd='+encodeURIComponent(c.cmd)+'&JsHttpRequest=1-xml'}}}
  if(window.Hls&&Hls.isSupported()&&/\.m3u8(\?|$)/i.test(url)){hls=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:30});hls.loadSource(url);hls.attachMedia(video);hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal){$('#playerStatus').textContent='تعذر تشغيل البث: '+d.type;hls.destroy();hls=null}})}
  else{video.src=url;video.load()}
@@ -156,12 +199,12 @@ async function loadEPG(source){if(!source?.epgUrl)throw Error('لم تضف را�
 function openEPG(c){const src=state.sources.find(s=>s.id===c.sourceId);$('#epgTitle').textContent=c.name;const matches=(state.epg||[]).filter(p=>(p.channel===c.tvgId||p.channel===c.name));if(matches.length){$('#epgContent').innerHTML=matches.slice(0,30).map(p=>'<div class="listrow"><div><strong>'+esc(p.title)+'</strong><small>'+esc(p.start||'')+' — '+esc(p.stop||'')+'</small><p>'+esc(p.desc)+'</p></div></div>').join('')}else{$('#epgContent').innerHTML='<div class="empty"><b>لا توجد بيانات دليل لهذا البرنامج</b>يمكن تحميل XMLTV من إعدادات المصدر إذا كان الرابط متوفراً.</div><button class="primary" id="loadEpgBtn">تحميل / تحديث EPG</button>';$('#loadEpgBtn').onclick=async()=>{try{const n=await loadEPG(src);toast('تم تحميل '+n+' برنامج');openEPG(c)}catch(e){toast(e.message)}}}modal('epgModal')}
 function openSource(){modal('sourceModal');$('#sourceError').textContent=''}
 function selectType(type){activeType=type;$$('#sourceTypes .chip').forEach(b=>b.classList.toggle('active',b.dataset.type===type));$('#m3uFields').classList.toggle('hidden',type!=='m3u');$('#xtreamFields').classList.toggle('hidden',type!=='xtream');$('#stalkerFields').classList.toggle('hidden',type!=='stalker');$('#sourceForm [name=url]').required=type==='m3u'&&!$('#playlistFile')?.files?.length;$('#sourceForm [name=server]').required=type==='xtream';$('#sourceForm [name=username]').required=type==='xtream';$('#sourceForm [name=password]').required=type==='xtream';$('#sourceForm [name=portal]').required=type==='stalker'}
-$('#sourcesBtn').onclick=openSource;$('#heroAdd').onclick=openSource;$('#addSource2').onclick=openSource;$('#settingsBtn').onclick=()=>showView('settingsView');
+$('#sourcesBtn').onclick=()=>showView('sourcesView');$('#heroAdd').onclick=openSource;$('#addSource2').onclick=openSource;$('#settingsBtn').onclick=()=>showView('settingsView');\n$('#manageSourcesBtn').onclick=()=>showView('sourcesView');
 $$('.navitem').forEach(b=>b.onclick=()=>showView(b.dataset.view));
 $$('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));
 $('#sourceTypes').onclick=e=>{const b=e.target.closest('[data-type]');if(b)selectType(b.dataset.type)};$('#playlistFile').onchange=()=>{$('#sourceForm [name=url]').required=activeType==='m3u'&&!$('#playlistFile').files.length};
 $('#sourceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),data=Object.fromEntries(f.entries()),file=$('#playlistFile')?.files?.[0];data.name=(data.name||'').trim();if(activeType==='m3u'&&file){if(file.size>100*1024*1024){$('#sourceError').textContent='حجم ملف القائمة أكبر من 100 MB.';return}try{data.fileText=await file.text();data.fileName=file.name}catch(err){$('#sourceError').textContent='تعذر قراءة الملف المحدد: '+err.message;return}}const btn=$('#connectBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> جارٍ الاتصال…';$('#sourceError').textContent='جاري تحميل القائمة والتحقق منها…';try{const n=await connectSource(data);modal('sourceModal',false);e.target.reset();selectType('m3u');showView('libraryView');toast('تمت إضافة المصدر: '+n+' قناة')}catch(err){$('#sourceError').textContent=err.message||'فشل تحميل القائمة. تحقق من الرابط ثم أعد المحاولة.';}finally{btn.disabled=false;btn.textContent='اتصال وتحميل القنوات'}};
-$('#filters').onclick=e=>{const b=e.target.closest('[data-category]');if(b){activeFilter=b.dataset.category;render()}};
+$('#filters').onclick=e=>{const b=e.target.closest('[data-category]');if(b){activeFilter=b.dataset.category;render()}};\n$('#mediaTabs').onclick=e=>{const b=e.target.closest('[data-media]');if(!b)return;activeMediaType=b.dataset.media;activeFilter='all';$('#mediaTabs [data-media]').forEach(x=>x.classList.toggle('active',x===b));$('#viewTitle').textContent=activeMediaType==='live'?'القنوات':activeMediaType==='movie'?'الأفلام':'المسلسلات';$('#viewSubtitle').textContent=activeMediaType==='live'?'اختر القناة أو المجموعة التي تريدها':activeMediaType==='movie'?'أفلام قوائم التشغيل المحددة':'مسلسلات قوائم التشغيل المحددة';render()};\n$('#activeSource').onchange=e=>{activeSourceId=e.target.value;activeFilter='all';render()};
 $('#search').oninput=e=>{searchTerm=e.target.value;render()};
 $('#sortBtn').onclick=()=>{sortAZ=!sortAZ;toast(sortAZ?'ترتيب أبجدي':'الترتيب الافتراضي');render()};
 $('#refreshBtn').onclick=async()=>{if(!state.sources.length){openSource();return}const old=$('#refreshBtn').textContent;$('#refreshBtn').textContent='…';let ok=0;for(const s of [...state.sources]){try{if(s.type==='m3u'){const txt=await fetchText(s.url);const cs=parseM3U(txt,s.id);state.channels=state.channels.filter(c=>c.sourceId!==s.id).concat(cs);ok+=cs.length}else if(s.type==='xtream'){const b=s.server,auth='username='+encodeURIComponent(s.username)+'&password='+encodeURIComponent(s.password);const [cats,streams]=await Promise.all([httpRequest(b+'/player_api.php?'+auth+'&action=get_live_categories').then(r=>r.json()),httpRequest(b+'/player_api.php?'+auth+'&action=get_live_streams').then(r=>r.json())]);const cs=(Array.isArray(streams)?streams:[]).map(c=>({id:String(c.stream_id),name:c.name||'قناة',group:(cats.find(x=>String(x.category_id)===String(c.category_id))||{}).category_name||'Live TV',logo:c.stream_icon||'',url:b+'/live/'+encodeURIComponent(s.username)+'/'+encodeURIComponent(s.password)+'/'+c.stream_id+'.ts',sourceId:s.id,tvgId:c.epg_channel_id||''}));state.channels=state.channels.filter(c=>c.sourceId!==s.id).concat(cs);ok+=cs.length}}catch(e){console.warn(e)}}save();render();$('#refreshBtn').textContent=old;toast('اكتمل التحديث — '+ok+' قناة')};
