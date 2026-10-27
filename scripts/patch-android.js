@@ -30,11 +30,11 @@ m = m.replace(/<application\b([^>]*)>/, (tag, attrs) => {
  return '<application' + a + '>';
 });
 if (!m.includes('Media3PlayerActivity')) m = m.replace('</application>', '    <activity android:name=".Media3PlayerActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize" android:exported="false" android:screenOrientation="landscape" />\n</application>');
-m = m.replace(/<activity\\b([^>]*android:name=["'][^"']*MainActivity["'][^>]*)>/, (tag, attrs) => {
+m = m.replace(/<activity\b([^>]*android:name=["'][^"']*MainActivity["'][^>]*)>/, (tag, attrs) => {
  let a = attrs;
- if (/android:screenOrientation\\s*=/.test(a)) a = a.replace(/android:screenOrientation\\s*=\\s*["'][^"']*["']/, 'android:screenOrientation="landscape"');
+ if (/android:screenOrientation\s*=/.test(a)) a = a.replace(/android:screenOrientation\s*=\s*["'][^"']*["']/, 'android:screenOrientation="landscape"');
  else a += ' android:screenOrientation="landscape"';
- if (!/android:configChanges\\s*=/.test(a)) a += ' android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"';
+ if (!/android:configChanges\s*=/.test(a)) a += ' android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"';
  return '<activity' + a + '>';
 });
 if (!m.includes('android.software.leanback')) m = m.replace('<application', '    <uses-feature android:name="android.software.leanback" android:required="false" />\n    <application');
