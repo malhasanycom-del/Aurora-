@@ -1,4 +1,4 @@
-# Aurora IPTV
+# آل راشد TV (Al-Rashid TV)
 
 A fresh Android IPTV player project built with Capacitor. Supports user-provided M3U/M3U8 playlists, Xtream Codes portals, EPG XMLTV, favorites, search, recently played, parental PIN, playback controls and Android TV-friendly focus states.
 

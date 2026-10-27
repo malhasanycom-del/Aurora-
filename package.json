@@ -1,8 +1,8 @@
 {
-  "name": "aurora-iptv",
+  "name": "al-rashid-tv",
   "version": "1.0.0",
   "private": true,
-  "description": "Aurora IPTV player for Android phones and Android TV",
+  "description": "Al-Rashid TV IPTV player for Android phones and Android TV",
   "scripts": {
     "validate": "node scripts/validate.js",
     "prepare:android": "node scripts/prepare-android.js",
