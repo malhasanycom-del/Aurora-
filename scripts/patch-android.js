@@ -29,11 +29,11 @@ m = m.replace(/<application\b([^>]*)>/, (tag, attrs) => {
  else a += ' android:networkSecurityConfig="@xml/network_security_config"';
  return '<application' + a + '>';
 });
-if (!m.includes('Media3PlayerActivity')) m = m.replace('</application>', '    <activity android:name=".Media3PlayerActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize" android:exported="false" android:screenOrientation="landscape" />\n</application>');
+if (!m.includes('Media3PlayerActivity')) m = m.replace('</application>', '    <activity android:name=".Media3PlayerActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize" android:exported="false" android:screenOrientation="portrait" />\n</application>');
 m = m.replace(/<activity\b([^>]*)>/g, (tag, attrs) => {
  let a = attrs;
- if (/android:screenOrientation\s*=/.test(a)) a = a.replace(/android:screenOrientation\s*=\s*["'][^"']*["']/, 'android:screenOrientation="landscape"');
- else a += ' android:screenOrientation="landscape"';
+ if (/android:screenOrientation\s*=/.test(a)) a = a.replace(/android:screenOrientation\s*=\s*["'][^"']*["']/, 'android:screenOrientation="portrait"');
+ else a += ' android:screenOrientation="portrait"';
  if (/android:name=["'][^"']*MainActivity["']/.test(a) && !/android:configChanges\s*=/.test(a)) a += ' android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize"';
  return '<activity' + a + '>';
 });
@@ -51,5 +51,5 @@ if (!mainText.includes('AuroraMedia3Plugin.class')) {
  mainText = mainText.replace('public class MainActivity extends BridgeActivity {', 'public class MainActivity extends BridgeActivity {\n @Override public void onCreate(Bundle savedInstanceState) { registerPlugin(AuroraMedia3Plugin.class); super.onCreate(savedInstanceState); }');
  fs.writeFileSync(mainActivity, mainText);
 }
-if (!g.includes('media3-exoplayer-hls:1.11.1') || !m.includes('android:networkSecurityConfig="@xml/network_security_config"') || !m.includes('android:screenOrientation="landscape"')) throw new Error('Media3/network config/landscape orientation validation failed');
+if (!g.includes('media3-exoplayer-hls:1.11.1') || !m.includes('android:networkSecurityConfig="@xml/network_security_config"') || !m.includes('android:screenOrientation="portrait"')) throw new Error('Media3/network config/portrait orientation validation failed');
 console.log('Configured IPTV network permissions, all-host HTTP compatibility and native Media3 1.11.1 HLS playback.');
