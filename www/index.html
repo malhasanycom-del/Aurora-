@@ -10,6 +10,44 @@
 @media(max-width:620px){.shell{padding:14px 13px 94px}.top{margin-bottom:15px}.brand h1{font-size:20px}.brand small{font-size:10px}.logo{width:42px;height:42px}.top-actions .softbtn{display:none}.hero{display:block;min-height:0;padding:22px 20px}.hero-art{display:none}.hero h2{font-size:29px}.hero p{font-size:13px}.stats{gap:8px;margin:12px 0 23px}.stat{padding:12px}.stat strong{font-size:20px}.stat span{font-size:10px}.channels{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.channel{padding:11px;min-height:116px}.ch-logo{width:39px;height:39px}.section-head{margin-top:20px}.formgrid{grid-template-columns:1fr}.bottomnav{gap:4px}.navitem{min-width:49px;padding:4px 5px}}
 @media(min-width:1000px){.shell{padding-top:26px}.channels{grid-template-columns:repeat(5,minmax(0,1fr))}}
  .source-picker{display:flex;align-items:center;gap:10px;margin:2px 0 12px;flex-wrap:wrap}.source-picker label{color:var(--muted);font-size:13px}.source-picker .field{max-width:360px;flex:1;min-width:160px}.media-tabs .chip{font-weight:700;padding:10px 16px}
+
+/* Landscape-first TV interface, horizontal media rows and cinematic motion */
+html,body{width:100%;min-height:100%;overscroll-behavior-x:none}
+body{background:radial-gradient(ellipse at 8% 0%,#17456a80 0,transparent 34%),radial-gradient(ellipse at 92% 92%,#4b1e6470 0,transparent 36%),linear-gradient(135deg,#070b16,#101a2c 54%,#0b1020);background-attachment:fixed}
+#app.shell{width:100%;max-width:none;min-height:100vh;margin:0;padding:18px 28px 86px}
+.top{margin-bottom:18px}
+.hero{min-height:150px;padding:20px 30px;background:linear-gradient(105deg,#102b48f2,#171a35ef 54%,#35194bef);animation:cinematicIn .55s both}
+.hero h2{font-size:clamp(24px,2.4vw,34px);margin:8px 0}
+.hero p{max-width:720px;margin-bottom:12px}
+.hero-art{height:125px}
+.orb{width:112px;height:112px}
+.orb:before{width:90px;height:90px}
+.orb span{font-size:35px}
+.stats{grid-template-columns:repeat(3,minmax(110px,180px));margin:12px 0 18px}
+.section-head{margin:16px 0 10px}
+.channels{display:flex;flex-direction:column;gap:8px}
+.channel{display:grid;grid-template-columns:44px minmax(150px,1fr) minmax(110px, .55fr) auto;align-items:center;gap:12px;min-height:66px;padding:9px 14px;border-radius:14px;text-align:right;animation:rowEnter .35s both}
+.channel .ch-top{display:contents}
+.ch-logo{grid-column:1;grid-row:1;width:42px;height:42px;border-radius:12px}
+.channel strong{grid-column:2;grid-row:1;margin:0;font-size:14px}
+.channel small{grid-column:3;grid-row:1;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.channel .fav{grid-column:4;grid-row:1;min-width:40px}
+.channel:hover,.channel:focus-visible{transform:translateX(-3px) scale(1.002)}
+.channel:nth-child(1){animation-delay:.015s}.channel:nth-child(2){animation-delay:.03s}.channel:nth-child(3){animation-delay:.045s}.channel:nth-child(4){animation-delay:.06s}.channel:nth-child(5){animation-delay:.075s}
+.bottomnav{top:0;bottom:0;left:0;right:auto;width:78px;padding:22px 8px;flex-direction:column;justify-content:flex-start;gap:18px;border-top:0;border-left:1px solid #26344a;background:#0a101de8}
+.navitem{min-width:0;width:100%;padding:10px 2px;border-radius:13px}
+.navitem.active{background:#65ddff12}
+.modal .dialog{max-height:88vh}
+#sourcesView,#settingsView{animation:cinematicIn .28s both}
+#libraryView{animation:cinematicIn .28s both}
+@keyframes rowEnter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cinematicIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(min-width:900px){#app.shell{padding-right:100px;padding-left:30px}.channels{gap:7px}.channel{grid-template-columns:48px minmax(180px,1fr) minmax(150px,.65fr) auto}}
+@media(max-width:899px){#app.shell{padding:12px 14px 82px 88px}.hero{padding:18px 20px;min-height:130px}.hero-art{height:90px}.orb{width:82px;height:82px}.orb:before{width:66px;height:66px}.orb span{font-size:28px}.stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.stat{padding:10px}.stat strong{font-size:18px}.channel{grid-template-columns:40px minmax(100px,1fr) minmax(70px,.5fr) auto;gap:8px;padding:8px 10px}.ch-logo{width:38px;height:38px}.channel strong{font-size:12px}.channel small{font-size:10px}}
+@media(max-width:560px){#app.shell{padding:10px 10px 76px 68px}.top{gap:6px}.brand{gap:7px}.brand h1{font-size:17px}.brand small{font-size:9px}.logo{width:36px;height:36px;border-radius:12px;font-size:20px}.top-actions{gap:5px}.iconbtn,.softbtn{padding:8px 9px;font-size:12px}.top-actions .softbtn{display:block}.hero{display:grid;grid-template-columns:1fr .3fr;padding:14px 12px;gap:5px}.hero h2{font-size:22px}.hero p{font-size:11px;line-height:1.5}.hero-art{display:grid;height:65px}.orb{width:58px;height:58px}.orb:before{width:46px;height:46px}.orb span{font-size:20px}.stats{margin:9px 0 13px}.stat{padding:8px 6px;border-radius:11px}.stat strong{font-size:15px}.stat span{font-size:9px}.section-head{margin:13px 0 8px}.section-head h3{font-size:15px}.section-head p{font-size:10px}.filters{gap:5px;padding-bottom:8px}.chip{padding:7px 9px;font-size:11px}.source-picker{gap:6px}.source-picker .field{min-width:90px}.toolbar{gap:6px}.search{padding:10px;font-size:12px}.channels{gap:6px}.channel{grid-template-columns:32px minmax(0,1fr) auto;gap:7px;min-height:54px;padding:7px;border-radius:11px}.ch-logo{width:31px;height:31px;border-radius:9px;font-size:14px}.channel strong{grid-column:2;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:11px;line-height:1.3}.channel small{display:none}.channel .fav{grid-column:3;min-width:28px;font-size:17px}.bottomnav{width:58px;padding:16px 5px;gap:12px}.navitem{font-size:9px;padding:8px 0}.navitem span{font-size:18px;margin-bottom:2px}.dialog{padding:15px}.formgrid{grid-template-columns:1fr}}
+@media(orientation:portrait) and (max-width:899px){body:after{content:"لأفضل تجربة، دوّر جهازك إلى الوضع الأفقي";position:fixed;z-index:8;bottom:76px;left:50%;transform:translateX(-50%);padding:7px 12px;background:#121f35e8;border:1px solid #66e3ff55;border-radius:20px;color:#d9f8ff;font-size:10px;white-space:nowrap;pointer-events:none;animation:fade 1s 2s both}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
 </style>
 </head>
 <body>
