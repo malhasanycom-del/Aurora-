@@ -20,7 +20,9 @@ fs.writeFileSync(path.join(xmlDir, 'network_security_config.xml'), [
   '</network-security-config>'
 ].join('\n'));
 let m = fs.readFileSync(manifest, 'utf8');
-if (!m.includes('android.permission.INTERNET')) m = m.replace(/<application\b/, '  <uses-permission android:name="android.permission.INTERNET" />\n    <application');
+for (const permission of ['android.permission.INTERNET','android.permission.ACCESS_NETWORK_STATE','android.permission.WAKE_LOCK']) {
+ if (!m.includes(permission)) m = m.replace(/<application\b/, '  <uses-permission android:name="' + permission + '" />\n    <application');
+}
 m = m.replace(/<application\b([^>]*)>/, (tag, attrs) => {
  let a = attrs;
  if (/android:networkSecurityConfig\s*=/.test(a)) a = a.replace(/android:networkSecurityConfig\s*=\s*["'][^"']*["']/, 'android:networkSecurityConfig="@xml/network_security_config"');
@@ -43,4 +45,4 @@ if (!mainText.includes('AuroraMedia3Plugin.class')) {
  fs.writeFileSync(mainActivity, mainText);
 }
 if (!g.includes('media3-exoplayer-hls:1.11.1') || !m.includes('android:networkSecurityConfig="@xml/network_security_config"')) throw new Error('Media3/network config validation failed');
-console.log('Configured scoped HTTP access and native Media3 1.11.1 HLS playback.');
+console.log('Configured IPTV network permissions, all-host HTTP compatibility and native Media3 1.11.1 HLS playback.');
