@@ -144,9 +144,9 @@ async function parseM3UFile(file,sourceId){
  try{
   if(file.stream&&window.TextDecoderStream){
    const reader=file.stream().pipeThrough(new TextDecoderStream()).getReader();
-   while(true){const {value,done}=await reader.read();if(done)break;carry+=value;let at;while((at=carry.indexOf('\\n'))>=0){consume(carry.slice(0,at).replace(/\\r$/,''));carry=carry.slice(at+1)}}
-   if(carry)consume(carry.replace(/\\r$/,''));
-  }else{const text=await file.text();text.replace(/^\\uFEFF/,'').split(/\\r?\\n/).forEach(consume)}
+   while(true){const {value,done}=await reader.read();if(done)break;carry+=value;let at;while((at=carry.indexOf('\n'))>=0){consume(carry.slice(0,at).replace(/\r$/,''));carry=carry.slice(at+1)}}
+   if(carry)consume(carry.replace(/\r$/,''));
+  }else{const text=await file.text();text.replace(/^\uFEFF/,'').split(/\r?\n/).forEach(consume)}
  }catch(e){throw Error('تعذرت قراءة ملف القائمة: '+(e.message||e))}
  return out;
 }
