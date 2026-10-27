@@ -9,7 +9,8 @@
 @media(max-width:900px){.channels{grid-template-columns:repeat(3,minmax(0,1fr))}.hero{grid-template-columns:1fr .6fr;padding:22px}.hero-art{height:120px}.orb{width:112px;height:112px}.orb:before{width:91px;height:91px}.orb span{font-size:36px}}
 @media(max-width:620px){.shell{padding:14px 13px 94px}.top{margin-bottom:15px}.brand h1{font-size:20px}.brand small{font-size:10px}.logo{width:42px;height:42px}.top-actions .softbtn{display:none}.hero{display:block;min-height:0;padding:22px 20px}.hero-art{display:none}.hero h2{font-size:29px}.hero p{font-size:13px}.stats{gap:8px;margin:12px 0 23px}.stat{padding:12px}.stat strong{font-size:20px}.stat span{font-size:10px}.channels{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.channel{padding:11px;min-height:116px}.ch-logo{width:39px;height:39px}.section-head{margin-top:20px}.formgrid{grid-template-columns:1fr}.bottomnav{gap:4px}.navitem{min-width:49px;padding:4px 5px}}
 @media(min-width:1000px){.shell{padding-top:26px}.channels{grid-template-columns:repeat(5,minmax(0,1fr))}}
- .source-picker{display:flex;align-items:center;gap:10px;margin:2px 0 12px;flex-wrap:wrap}.source-picker label{color:var(--muted);font-size:13px}.source-picker .field{max-width:360px;flex:1;min-width:160px}.media-tabs .chip{font-weight:700;padding:10px 16px}\n</style>
+ .source-picker{display:flex;align-items:center;gap:10px;margin:2px 0 12px;flex-wrap:wrap}.source-picker label{color:var(--muted);font-size:13px}.source-picker .field{max-width:360px;flex:1;min-width:160px}.media-tabs .chip{font-weight:700;padding:10px 16px}
+</style>
 </head>
 <body>
 <div id="app" class="shell">
@@ -172,7 +173,9 @@ function updateSourcePicker(){
 function render(){
  renderStats();
  const wrap=$('#channels');
- let list=state.channels.filter(c=>!state.hidden.includes(c.id));\n list=list.filter(c=>inferMediaType(c)===activeMediaType);\n if(activeSourceId!=='all')list=list.filter(c=>c.sourceId===activeSourceId);
+ let list=state.channels.filter(c=>!state.hidden.includes(c.id));
+ list=list.filter(c=>inferMediaType(c)===activeMediaType);
+ if(activeSourceId!=='all')list=list.filter(c=>c.sourceId===activeSourceId);
  if(activeFilter==='favorites')list=list.filter(c=>state.favorites.includes(c.id));
  if(activeFilter==='recent')list=list.filter(c=>state.recent.includes(c.id)).sort((a,b)=>state.recent.indexOf(a.id)-state.recent.indexOf(b.id));
  if(activeFilter!=='recent'&&activeFilter!=='favorites'&&activeFilter!=='all')list=list.filter(c=>c.group===activeFilter);
@@ -199,7 +202,8 @@ async function loadEPG(source){if(!source?.epgUrl)throw Error('لم تضف را�
 function openEPG(c){const src=state.sources.find(s=>s.id===c.sourceId);$('#epgTitle').textContent=c.name;const matches=(state.epg||[]).filter(p=>(p.channel===c.tvgId||p.channel===c.name));if(matches.length){$('#epgContent').innerHTML=matches.slice(0,30).map(p=>'<div class="listrow"><div><strong>'+esc(p.title)+'</strong><small>'+esc(p.start||'')+' — '+esc(p.stop||'')+'</small><p>'+esc(p.desc)+'</p></div></div>').join('')}else{$('#epgContent').innerHTML='<div class="empty"><b>لا توجد بيانات دليل لهذا البرنامج</b>يمكن تحميل XMLTV من إعدادات المصدر إذا كان الرابط متوفراً.</div><button class="primary" id="loadEpgBtn">تحميل / تحديث EPG</button>';$('#loadEpgBtn').onclick=async()=>{try{const n=await loadEPG(src);toast('تم تحميل '+n+' برنامج');openEPG(c)}catch(e){toast(e.message)}}}modal('epgModal')}
 function openSource(){modal('sourceModal');$('#sourceError').textContent=''}
 function selectType(type){activeType=type;$$('#sourceTypes .chip').forEach(b=>b.classList.toggle('active',b.dataset.type===type));$('#m3uFields').classList.toggle('hidden',type!=='m3u');$('#xtreamFields').classList.toggle('hidden',type!=='xtream');$('#stalkerFields').classList.toggle('hidden',type!=='stalker');$('#sourceForm [name=url]').required=type==='m3u'&&!$('#playlistFile')?.files?.length;$('#sourceForm [name=server]').required=type==='xtream';$('#sourceForm [name=username]').required=type==='xtream';$('#sourceForm [name=password]').required=type==='xtream';$('#sourceForm [name=portal]').required=type==='stalker'}
-$('#sourcesBtn').onclick=()=>showView('sourcesView');$('#heroAdd').onclick=openSource;$('#addSource2').onclick=openSource;$('#settingsBtn').onclick=()=>showView('settingsView');\n$('#manageSourcesBtn').onclick=()=>showView('sourcesView');
+$('#sourcesBtn').onclick=()=>showView('sourcesView');$('#heroAdd').onclick=openSource;$('#addSource2').onclick=openSource;$('#settingsBtn').onclick=()=>showView('settingsView');
+$('#manageSourcesBtn').onclick=()=>showView('sourcesView');
 $$('.navitem').forEach(b=>b.onclick=()=>showView(b.dataset.view));
 $$('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));
 $('#sourceTypes').onclick=e=>{const b=e.target.closest('[data-type]');if(b)selectType(b.dataset.type)};$('#playlistFile').onchange=()=>{$('#sourceForm [name=url]').required=activeType==='m3u'&&!$('#playlistFile').files.length};
