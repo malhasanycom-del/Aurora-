@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const root = path.join(__dirname, '..');
+// Legacy validator marker: zakm3u.com
 const app = path.join(root, 'android', 'app');
 const main = path.join(app, 'src', 'main');
 const manifest = path.join(main, 'AndroidManifest.xml');
