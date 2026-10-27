@@ -45,11 +45,11 @@ body{background:radial-gradient(ellipse at 8% 0%,#17456a80 0,transparent 34%),ra
 @media(min-width:900px){#app.shell{padding-right:100px;padding-left:30px}.channels{gap:7px}.channel{grid-template-columns:48px minmax(180px,1fr) minmax(150px,.65fr) auto}}
 @media(max-width:899px){#app.shell{padding:12px 14px 82px 88px}.hero{padding:18px 20px;min-height:130px}.hero-art{height:90px}.orb{width:82px;height:82px}.orb:before{width:66px;height:66px}.orb span{font-size:28px}.stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.stat{padding:10px}.stat strong{font-size:18px}.channel{grid-template-columns:40px minmax(100px,1fr) minmax(70px,.5fr) auto;gap:8px;padding:8px 10px}.ch-logo{width:38px;height:38px}.channel strong{font-size:12px}.channel small{font-size:10px}}
 @media(max-width:560px){#app.shell{padding:10px 10px 76px 68px}.top{gap:6px}.brand{gap:7px}.brand h1{font-size:17px}.brand small{font-size:9px}.logo{width:36px;height:36px;border-radius:12px;font-size:20px}.top-actions{gap:5px}.iconbtn,.softbtn{padding:8px 9px;font-size:12px}.top-actions .softbtn{display:block}.hero{display:grid;grid-template-columns:1fr .3fr;padding:14px 12px;gap:5px}.hero h2{font-size:22px}.hero p{font-size:11px;line-height:1.5}.hero-art{display:grid;height:65px}.orb{width:58px;height:58px}.orb:before{width:46px;height:46px}.orb span{font-size:20px}.stats{margin:9px 0 13px}.stat{padding:8px 6px;border-radius:11px}.stat strong{font-size:15px}.stat span{font-size:9px}.section-head{margin:13px 0 8px}.section-head h3{font-size:15px}.section-head p{font-size:10px}.filters{gap:5px;padding-bottom:8px}.chip{padding:7px 9px;font-size:11px}.source-picker{gap:6px}.source-picker .field{min-width:90px}.toolbar{gap:6px}.search{padding:10px;font-size:12px}.channels{gap:6px}.channel{grid-template-columns:32px minmax(0,1fr) auto;gap:7px;min-height:54px;padding:7px;border-radius:11px}.ch-logo{width:31px;height:31px;border-radius:9px;font-size:14px}.channel strong{grid-column:2;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:11px;line-height:1.3}.channel small{display:none}.channel .fav{grid-column:3;min-width:28px;font-size:17px}.bottomnav{width:58px;padding:16px 5px;gap:12px}.navitem{font-size:9px;padding:8px 0}.navitem span{font-size:18px;margin-bottom:2px}.dialog{padding:15px}.formgrid{grid-template-columns:1fr}}
-@media(orientation:portrait) and (max-width:899px){body:after{content:"لأفضل تجربة، دوّر جهازك إلى الوضع الأفقي";position:fixed;z-index:8;bottom:76px;left:50%;transform:translateX(-50%);padding:7px 12px;background:#121f35e8;border:1px solid #66e3ff55;border-radius:20px;color:#d9f8ff;font-size:10px;white-space:nowrap;pointer-events:none;animation:fade 1s 2s both}}
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 
 
-/* Large-library performance safeguards */
+/* Premium polish and large-library performance safeguards */\nbutton{transition:filter .16s ease,transform .16s ease,background-color .16s ease}button:active{transform:scale(.98)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}.dialog{border-color:#425779;box-shadow:0 35px 100px #000b,0 0 0 1px #8f9cff0b inset}.settings-card,.stat{backdrop-filter:blur(12px)}.primary:hover{filter:brightness(1.08);box-shadow:0 10px 32px #7b83ff3b}.iconbtn:hover,.softbtn:hover,.chip:hover{border-color:#66e3ff70;background-color:#66e3ff10}\n/* Large-library performance safeguards */
 .channels{contain:content}.channel{content-visibility:auto;contain-intrinsic-size:66px;animation:none!important;transition:background-color .14s ease,border-color .14s ease,transform .14s ease}.channel img{content-visibility:auto}#channels[aria-busy="true"]{opacity:.92}#refreshBtn:disabled,#connectBtn:disabled{opacity:.65;cursor:wait}
 @media(prefers-reduced-motion:reduce){.channel{transition:none!important}}
 </style>
@@ -128,6 +128,28 @@ function inferMediaType(item){
  if(/movie|movies|films?|vod|cinema|سينما|أفلام|افلام|فيلم|أفلام\s*عربية|أفلام\s*أجنبية/.test(text)||/\.(mp4|mkv|avi|mov|m4v|wmv)([?#].*)?$/.test(url))return 'movie';
  return 'live';
 }
+async function parseM3UFile(file,sourceId){
+ const out=[];let meta=null,carry='',lineCount=0;
+ const consume=line=>{
+  line=line.trim();if(!line)return;
+  if(line.startsWith('#EXTINF:')){
+   const comma=line.indexOf(','),info=comma>=0?line.slice(comma+1).trim():'Channel';
+   const attr=k=>{const m=line.match(new RegExp(k+'="([^"]*)"','i'));return m?m[1]:''};
+   meta={name:info||'قناة',group:attr('group-title')||'عام',logo:attr('tvg-logo'),tvgId:attr('tvg-id'),url:'',sourceId};
+  }else if(!line.startsWith('#')&&meta){
+   meta.url=line;meta.id=idFor(sourceId+'|'+line,meta.name);meta.mediaType=inferMediaType(meta);out.push(meta);meta=null;
+  }
+  lineCount++;if(lineCount%25000===0)$('#sourceError').textContent='جارٍ تحليل الملف الكبير… '+out.length.toLocaleString('ar')+' قناة حتى الآن';
+ };
+ try{
+  if(file.stream&&window.TextDecoderStream){
+   const reader=file.stream().pipeThrough(new TextDecoderStream()).getReader();
+   while(true){const {value,done}=await reader.read();if(done)break;carry+=value;let at;while((at=carry.indexOf('\\n'))>=0){consume(carry.slice(0,at).replace(/\\r$/,''));carry=carry.slice(at+1)}}
+   if(carry)consume(carry.replace(/\\r$/,''));
+  }else{const text=await file.text();text.replace(/^\\uFEFF/,'').split(/\\r?\\n/).forEach(consume)}
+ }catch(e){throw Error('تعذرت قراءة ملف القائمة: '+(e.message||e))}
+ return out;
+}
 function parseM3U(text,sourceId){
  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/),out=[];let meta=null;
  for(let i=0;i<lines.length;i++){
@@ -166,8 +188,8 @@ async function httpRequest(url,options={}){
 }
 async function fetchText(url){const r=await httpRequest(url,{cache:'no-store',timeoutMs:90000});if(!r.ok)throw Error('HTTP '+r.status+' — تعذر تحميل المصدر');const text=await r.text();if(!text.trim())throw Error('المصدر أعاد ملفاً فارغاً. تحقق من الرابط وبيانات الدخول.');return text}
 async function connectSource(data){
- const source={id:idFor(Date.now().toString(),data.name),name:data.name,type:activeType,addedAt:Date.now(),...data};delete source.fileText;delete source.fileName;let channels=[];
- if(activeType==='m3u'){let playlistText='';if(data.fileText){playlistText=data.fileText;source.type='m3u-file';source.fileName=data.fileName||'playlist.m3u';delete data.fileText;delete data.fileName;}else{if(!validateHttp(data.url))throw Error('أدخل رابط M3U صحيحاً أو اختر ملفاً من الهاتف');playlistText=await fetchText(data.url)}if(!/^\s*(#EXTM3U|#EXTINF:|https?:\/\/)/i.test(playlistText))throw Error('الرد لا يبدو قائمة M3U صالحة. قد يكون الرابط صفحة تسجيل دخول أو JSON بدلاً من ملف القنوات.');channels=parseM3U(playlistText,source.id);if(!channels.length)throw Error('تم استلام الملف لكن لم تُعثر على قنوات. تأكد أن الملف يحتوي أسطر #EXTINF وروابط بث.');}
+ const source={id:idFor(Date.now().toString(),data.name),name:data.name,type:activeType,addedAt:Date.now(),...data};delete source.fileText;delete source.fileName;delete source.playlistFileObject;let channels=[];
+ if(activeType==='m3u'){let playlistText='';if(data.playlistFileObject){source.type='m3u-file';source.fileName=data.fileName||data.playlistFileObject.name||'playlist.m3u';channels=await parseM3UFile(data.playlistFileObject,source.id);}else if(data.fileText){playlistText=data.fileText;source.type='m3u-file';source.fileName=data.fileName||'playlist.m3u';delete data.fileText;delete data.fileName;channels=parseM3U(playlistText,source.id);}else{if(!validateHttp(data.url))throw Error('أدخل رابط M3U صحيحاً أو اختر ملفاً من الهاتف');playlistText=await fetchText(data.url);if(!/^\\s*(#EXTM3U|#EXTINF:|https?:\\/\\/)/i.test(playlistText))throw Error('الرد لا يبدو قائمة M3U صالحة. قد يكون الرابط صفحة تسجيل دخول أو JSON بدلاً من ملف القنوات.');channels=parseM3U(playlistText,source.id);}if(!channels.length)throw Error('تم استلام القائمة لكن لم تُعثر على قنوات. تأكد أن الملف يحتوي أسطر #EXTINF وروابط بث.');}
  if(activeType==='xtream'){
   if(!validateHttp(data.server))throw Error('أدخل عنوان خادم صحيحاً');const base=cleanUrl(data.server),auth='username='+encodeURIComponent(data.username)+'&password='+encodeURIComponent(data.password);
   const info=await httpRequest(base+'/player_api.php?'+auth);if(!info.ok)throw Error('تعذر الوصول إلى خادم Xtream');const api=await info.json();if(api.user_info?.auth===0)throw Error('اسم المستخدم أو كلمة المرور غير صحيحين');
@@ -245,12 +267,12 @@ async function loadEPG(source){if(!source?.epgUrl)throw Error('لم تضف را�
 function openEPG(c){const src=state.sources.find(s=>s.id===c.sourceId);$('#epgTitle').textContent=c.name;const matches=(state.epg||[]).filter(p=>(p.channel===c.tvgId||p.channel===c.name));if(matches.length){$('#epgContent').innerHTML=matches.slice(0,30).map(p=>'<div class="listrow"><div><strong>'+esc(p.title)+'</strong><small>'+esc(p.start||'')+' — '+esc(p.stop||'')+'</small><p>'+esc(p.desc)+'</p></div></div>').join('')}else{$('#epgContent').innerHTML='<div class="empty"><b>لا توجد بيانات دليل لهذا البرنامج</b>يمكن تحميل XMLTV من إعدادات المصدر إذا كان الرابط متوفراً.</div><button class="primary" id="loadEpgBtn">تحميل / تحديث EPG</button>';$('#loadEpgBtn').onclick=async()=>{try{const n=await loadEPG(src);toast('تم تحميل '+n+' برنامج');openEPG(c)}catch(e){toast(e.message)}}}modal('epgModal')}
 function openSource(){modal('sourceModal');$('#sourceError').textContent=''}
 function selectType(type){activeType=type;$$('#sourceTypes .chip').forEach(b=>b.classList.toggle('active',b.dataset.type===type));$('#m3uFields').classList.toggle('hidden',type!=='m3u');$('#xtreamFields').classList.toggle('hidden',type!=='xtream');$('#stalkerFields').classList.toggle('hidden',type!=='stalker');$('#sourceForm [name=url]').required=type==='m3u'&&!$('#playlistFile')?.files?.length;$('#sourceForm [name=server]').required=type==='xtream';$('#sourceForm [name=username]').required=type==='xtream';$('#sourceForm [name=password]').required=type==='xtream';$('#sourceForm [name=portal]').required=type==='stalker'}
-$('#sourcesBtn').onclick=()=>showView('sourcesView');$('#heroAdd').onclick=openSource;$('#addSource2').onclick=openSource;$('#settingsBtn').onclick=()=>showView('settingsView');
+$('#sourcesBtn').onclick=e=>{e.preventDefault();openSource()};$('#heroAdd').onclick=e=>{e.preventDefault();openSource()};$('#addSource2').onclick=e=>{e.preventDefault();openSource()};$('#settingsBtn').onclick=()=>showView('settingsView');
 $('#manageSourcesBtn').onclick=()=>showView('sourcesView');
 $$('.navitem').forEach(b=>b.onclick=()=>showView(b.dataset.view));
 $$('[data-close]').forEach(b=>b.onclick=()=>modal(b.dataset.close,false));
 $('#sourceTypes').onclick=e=>{const b=e.target.closest('[data-type]');if(b)selectType(b.dataset.type)};$('#playlistFile').onchange=()=>{$('#sourceForm [name=url]').required=activeType==='m3u'&&!$('#playlistFile').files.length};
-$('#sourceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),data=Object.fromEntries(f.entries()),file=$('#playlistFile')?.files?.[0];data.name=(data.name||'').trim();if(activeType==='m3u'&&file){if(file.size>100*1024*1024){$('#sourceError').textContent='حجم ملف القائمة أكبر من 100 MB.';return}try{data.fileText=await file.text();data.fileName=file.name}catch(err){$('#sourceError').textContent='تعذر قراءة الملف المحدد: '+err.message;return}}const btn=$('#connectBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> جارٍ الاتصال…';$('#sourceError').textContent='جاري تحميل القائمة والتحقق منها…';try{const n=await connectSource(data);modal('sourceModal',false);e.target.reset();selectType('m3u');showView('libraryView');toast('تمت إضافة المصدر: '+n+' قناة')}catch(err){$('#sourceError').textContent=err.message||'فشل تحميل القائمة. تحقق من الرابط ثم أعد المحاولة.';}finally{btn.disabled=false;btn.textContent='اتصال وتحميل القنوات'}};
+$('#sourceForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target),data=Object.fromEntries(f.entries()),file=$('#playlistFile')?.files?.[0];data.name=(data.name||'').trim();if(activeType==='m3u'&&file){data.playlistFileObject=file;data.fileName=file.name;$('#sourceError').textContent='تم اختيار '+file.name+' ('+(file.size/1048576).toFixed(1)+' MB) — جارٍ تجهيز الاستيراد…'}const btn=$('#connectBtn');btn.disabled=true;btn.innerHTML='<span class="loading"></span> جارٍ الاتصال…';$('#sourceError').textContent='جاري تحميل القائمة والتحقق منها…';try{const n=await connectSource(data);modal('sourceModal',false);e.target.reset();selectType('m3u');showView('libraryView');toast('تمت إضافة المصدر: '+n+' قناة')}catch(err){$('#sourceError').textContent=err.message||'فشل تحميل القائمة. تحقق من الرابط ثم أعد المحاولة.';}finally{btn.disabled=false;btn.textContent='اتصال وتحميل القنوات'}};
 $('#filters').onclick=e=>{const b=e.target.closest('[data-category]');if(b){activeFilter=b.dataset.category;render()}};
 $('#mediaTabs').onclick=e=>{const b=e.target.closest('[data-media]');if(!b)return;activeMediaType=b.dataset.media;activeFilter='all';$$('#mediaTabs [data-media]').forEach(x=>x.classList.toggle('active',x===b));$('#viewTitle').textContent=activeMediaType==='live'?'القنوات':activeMediaType==='movie'?'الأفلام':'المسلسلات';$('#viewSubtitle').textContent=activeMediaType==='live'?'اختر القناة أو المجموعة التي تريدها':activeMediaType==='movie'?'أفلام قوائم التشغيل المحددة':'مسلسلات قوائم التشغيل المحددة';render()};
 $('#activeSource').onchange=e=>{activeSourceId=e.target.value;activeFilter='all';render()};
